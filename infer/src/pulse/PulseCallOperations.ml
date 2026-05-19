@@ -117,6 +117,8 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
   let astate = Decompiler.add_call_source ret_val reason actuals astate in
   let astate = AbductiveDomain.declare_unknown_values astate in
+  (* TODO_OXUX: havoced arguments also need to be tracked *)
+  let astate = AbductiveDomain.track_ox_var ret_val astate in
   (* set to [false] if we think the procedure called does not behave "purely", i.e. return the same
      value for the same inputs *)
   let is_pure = ref true in

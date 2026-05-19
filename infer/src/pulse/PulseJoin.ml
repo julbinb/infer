@@ -428,12 +428,16 @@ let join_abductive astate_lhs astate_rhs =
   let unknown_values =
     astate_lhs.AbductiveDomain.unknown_values || astate_rhs.AbductiveDomain.unknown_values
   in
+  let oxux_path = PulseOXUXFormula.unsupported "originated from join_abductive"
+  (* TODO_OXUX: joining oxux-paths has not been considered yet *)
+  in
   AbductiveDomain.mk_join_state
     ~pre:(stack_pre_join, heap_pre_join, attrs_pre_join)
     ~post:(stack_post_join, heap_post_join, attrs_post_join)
     formula (* TODO: almost everything past this *) Decompiler.empty
     ~need_dynamic_type_specialization:AbstractValue.Set.empty (PulseTopl.start ()) transitive_info
     PulseMutualRecursion.Set.empty loop_header_info ~unknown_values SkippedCalls.empty
+    ~oxux_path
 
 
 let join (astate_lhs, path_lhs) (astate_rhs, path_rhs) =

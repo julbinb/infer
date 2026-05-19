@@ -1499,6 +1499,8 @@ module PulseTransferFunctions = struct
       | Prune (condition, loc, _is_then_branch, _if_kind) ->
           let prune_result =
             let=* astate = check_config_usage analysis_data loc condition astate in
+            (* TODO_OXUX: at this point, the condition is too source level, e.g. n$1 == n$2, which we don't need *)
+            let astate = AbductiveDomain.track_ux_condition condition astate in
             PulseOperations.prune proc_desc path loc ~condition astate
           in
           let results =

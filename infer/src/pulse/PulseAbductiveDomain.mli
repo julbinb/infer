@@ -2,7 +2,7 @@
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * LICENSE file in the root directory of tcommenthis source tree.
  *)
 
 open! IStd
@@ -77,6 +77,7 @@ type t = private
   ; loop_invariant_under_inference: t loop_invariant_under_inference option
   ; unknown_values: bool  (** did we generate at least one unknown abstract value on this path? *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
+  ; oxux_path: PulseOXUXFormula.t (** path condition that accounts for over-approximate (unknown) variables *)
   }
 [@@deriving equal]
 
@@ -101,6 +102,7 @@ val mk_join_state :
   -> PulseLoopHeaderInfo.t
   -> unknown_values:bool
   -> SkippedCalls.t
+  -> oxux_path:PulseOXUXFormula.t
   -> t
 
 (** Safe version of {!PulseBaseStack} *)
@@ -394,6 +396,10 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 val add_missed_captures : Typ.Name.Set.t -> t -> t
 
 val declare_unknown_values : t -> t
+
+val track_ox_var : AbstractValue.t -> t -> t
+
+val track_ux_condition : Exp.t -> t -> t
 
 val get_path_condition : t -> Formula.t
 

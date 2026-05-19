@@ -88,7 +88,8 @@ type t =
   ; loop_header_info: (PulseLoopHeaderInfo.t[@yojson.opaque])
   ; loop_invariant_under_inference: (t loop_invariant_under_inference option[@yojson.opaque])
   ; unknown_values: bool
-  ; skipped_calls: SkippedCalls.t }
+  ; skipped_calls: SkippedCalls.t 
+  ; oxux_path: PulseOXUXFormula.t }
 [@@deriving compare, equal, yojson_of]
 
 let pp_ ~is_summary f
@@ -103,7 +104,8 @@ let pp_ ~is_summary f
      ; loop_header_info
      ; loop_invariant_under_inference
      ; unknown_values
-     ; skipped_calls }
+     ; skipped_calls
+     ; oxux_path }
      [@warning "+missing-record-field-pattern"] ) =
   let pp_decompiler f =
     if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
@@ -128,11 +130,14 @@ let pp_ ~is_summary f
      loop_header_info=%a@;\
      %tunknown_values=%b@;\
      skipped_calls=%a@;\
+     oxux=%a@;\
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
     need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
     recursive_calls PulseLoopHeaderInfo.pp loop_header_info pp_loop_invariant_under_inference
-    unknown_values SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    unknown_values SkippedCalls.pp skipped_calls 
+    PulseOXUXFormula.pp oxux_path 
+    PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false
@@ -1555,12 +1560,13 @@ let empty =
   ; loop_header_info= PulseLoopHeaderInfo.empty
   ; loop_invariant_under_inference= None
   ; unknown_values= false
-  ; skipped_calls= SkippedCalls.empty }
+  ; skipped_calls= SkippedCalls.empty
+  ; oxux_path= PulseOXUXFormula.empty }
 
 
 let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_post, attrs_post)
     path_condition decompiler ~need_dynamic_type_specialization topl transitive_info recursive_calls
-    loop_header_info ~unknown_values skipped_calls =
+    loop_header_info ~unknown_values skipped_calls ~oxux_path =
   { pre= PreDomain.update empty.pre ~stack:stack_pre ~heap:heap_pre ~attrs:attrs_pre
   ; post= PostDomain.update empty.post ~stack:stack_post ~heap:heap_post ~attrs:attrs_post
   ; path_condition
@@ -1572,7 +1578,8 @@ let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_
   ; loop_header_info
   ; loop_invariant_under_inference= None
   ; unknown_values
-  ; skipped_calls }
+  ; skipped_calls
+  ; oxux_path }
 
 
 let canon_pointer_source' astate = function
@@ -2440,6 +2447,14 @@ let add_skipped_calls new_skipped_calls astate =
 
 
 let declare_unknown_values astate = {astate with unknown_values= true}
+
+let track_ox_var var astate = 
+  let oxux_path = PulseOXUXFormula.add_ox_var var astate.oxux_path in
+  {astate with oxux_path}
+
+let track_ux_condition condition astate =
+  let oxux_path = PulseOXUXFormula.add_ux_condition condition astate.oxux_path in
+  {astate with oxux_path}
 
 let transfer_transitive_info_to_caller callee_pname call_loc summary caller_astate =
   let caller = caller_astate.transitive_info in
